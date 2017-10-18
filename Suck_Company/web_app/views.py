@@ -4,3 +4,7 @@ from django.http import HttpResponse
 
 def index(request):
     return render(request,"index.html")
+
+def companynew(request):
+    return render(request,"company_new.html")
+

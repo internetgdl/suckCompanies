@@ -1,18 +1,106 @@
-{% extends "main.html" %}
-
-{% block body %}
+{% extends "main.html" %} {% block body %}
 <div class="jumbotron">
     <h1 class="display-3">Search by company</h1>
     <div class="container">
         <div class="row justify-content-md-center" style="padding:5px">
-            <input type="text" class="form-control" />
+            <input type="text" class="form-control" id="filter" />
         </div>
         <div class="row justify-content-md-center" style="padding:5px">
-            <a class="btn btn-lg btn-success" href="#" role="button">Search</a>
+            <table class="table table-inverse">
+                <tbody id="tblBody">
+
+                </tbody>
+            </table>
+        </div>
+        <div class="row justify-content-md-center">
+            <a id="btnSearch" class="btn btn-lg btn-success" href="#" role="button">Search</a>
         </div>
     </div>
 </div>
-{% endblock body %}
+{% endblock body %} {% endblock body %} {% block scripts %} {% csrf_token %}
+<script type="text/html" id="rowTemplate">
+    <td><%= name %></td>
+    <td><%= category %></td>
+    <td><%= complain %></td>
+</script>
+<script>
+    $(function () {
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+        var RowModel = Backbone.Model.extend({});
+        var RowView = Backbone.View.extend({
+            tag: 'tr',
+            template: _.template($('#rowTemplate')),
+            initialize: function (model) {
+                var self = this;
+                this.model = model;
+                this.model.on('destroy',function(){
+                    self.remove();
+                });
+            },
+            render: function () {
+                this.$el.html(this.template(this.model.attributes));
+                return this;
+            }
 
-{% block scripts %}
-{% endblock scripts %}
+        });
+        var MainCollection = Backbone.Collection.extend({
+            model: RowModel,
+            searchCompany: function () {
+                var request = $.ajax({
+                    url: "api/company/search",
+                    method: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(this.toJSON())
+                });
+                return request;
+            }
+        });
+        var MainModel = Backbone.Model.extend({
+
+        });
+        var MainView = Backbone.View.extend({
+            el: $('#formmain'),
+            events: {
+                'click #btnSearch': 'searchCompany'
+            },
+            initialize: function (model) {
+                this.model = model;
+                this.collection = new MainCollection();
+                this.collection.on('add', function (model) {
+                    var view = new RowView(model);
+                    $('#tblBody').append(view.render().$el.html());
+                });
+            },
+            searchCompany: function (e) {
+                e.preventDefault();
+                this.collection.empty();
+                this.model.set('name', $('#name').val());
+                this.model.set('complain', $('#complain').val());
+                this.model.set('category', $('#category').val());
+                console.log('save company');
+                console.log(this.model.toJSON());
+                var request = this.model.saveCompany();
+                request.done(function (response) {
+                    $('#confirmationModal').modal('show');
+                })
+                    .fail(function (error) {
+                        alert(error);
+                    });
+            }
+        });
+        var mainmodel = new MainModel();
+        var mainview = new MainView(mainmodel);
+
+    });
+</script> {% endblock scripts %}

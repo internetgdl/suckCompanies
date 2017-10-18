@@ -1,0 +1,103 @@
+{% extends "main.html" %} {% block body %}
+<form id="formmain">
+    <h3>Alta Compañia</h3>
+    <br>
+    <div class="form-group">
+        <label for="exampleInputEmail1">Nombre compañia</label>
+        <input type="text" class="form-control" id="name" aria-describedby="emailHelp" placeholder="Nombre de la compañia">
+        <small id="emailHelp" class="form-text text-muted">La información es anonima.</small>
+    </div>
+    <div class="form-group">
+        <label for="complain">Queja</label>
+        <input type="text" class="form-control" id="complain" placeholder="Queja">
+    </div>
+    <div class="form-group">
+        <label for="complain">Categoria</label>
+        <select class="form-control" placeholder="Categoria" id="category">
+            <option>Sueldos</option>
+            <option>Ambiente Laboral</option>
+            <option>Crecimiento Profesional</option>
+            <option>Instalaciones</option>
+            <option>Malas practicas</option>
+
+        </select>
+    </div>
+    <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
+
+    <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Message</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <h3>La compañia ha sido guardada correctamente</h3>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+</form>
+{% endblock body %} {% block scripts %} {% csrf_token %}
+<script>
+    $(function () {
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+        var MainModel = Backbone.Model.extend({
+            saveCompany: function () {
+                var request = $.ajax({
+                    url: "api/company/new",
+                    method: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(this.toJSON())
+                });
+                return request;
+            }
+        });
+        var MainView = Backbone.View.extend({
+            el: $('#formmain'),
+            events: {
+                'click #btnSave': 'saveCompany'
+            },
+            initialize: function (model) {
+                this.model = model;
+                $('#confirmationModal').on('hidden.bs.modal', function (e) {
+                    window.location.replace('/web_app');
+                });
+            },
+            saveCompany: function (e) {
+                e.preventDefault();
+                this.model.set('name', $('#name').val());
+                this.model.set('complain', $('#complain').val());
+                this.model.set('category', $('#category').val());
+                console.log('save company');
+                console.log(this.model.toJSON());
+                var request = this.model.saveCompany();
+                request.done(function (response) {
+                    $('#confirmationModal').modal('show');
+                })
+                    .fail(function (error) {
+                        alert(error);
+                    });
+            }
+        });
+        var mainmodel = new MainModel();
+        var mainview = new MainView(mainmodel);
+
+    });
+</script> {% endblock scripts %}
