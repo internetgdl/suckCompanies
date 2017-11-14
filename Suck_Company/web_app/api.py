@@ -19,5 +19,9 @@ def company_new(request):
 
 def company_search(request):
     filterSearch = json.loads(request.body)
-    result = models.Company.objects.get(name__contains=filterSearch.name)
-    return HttpResponse(result)
+    print(filterSearch)
+    result = models.Company.objects.filter(name__contains=filterSearch["name"])
+    # serialize queryset
+    serialized_queryset = serializers.serialize('json', result)
+    datos = [x["fields"] for x in json.loads(serialized_queryset)]
+    return HttpResponse(json.dumps(datos))
