@@ -5,8 +5,14 @@ from . import api
 from .apiv2 import CompanyViewSet, CategoryViewSet
 
 router = routers.DefaultRouter()
-router.register('companies',CompanyViewSet)
+# router.register('companies',CompanyViewSet)
 router.register('categories',CategoryViewSet)
+
+companies_list = CompanyViewSet.as_view({
+    'get': 'list',
+    'post': 'create',
+    'delete': 'destroy'
+})
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
@@ -14,4 +20,5 @@ urlpatterns = [
     url(r'^api/company/new$', api.company_new, name='api_company_new'),
     url(r'^api/company/search$', api.company_search, name='api_company_search'),
     url(r'^api/', include(router.urls)),
+    url(r'^api/companies/$', companies_list, name='companies-list'),
 ]

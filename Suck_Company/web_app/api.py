@@ -17,6 +17,7 @@ def company_new(request):
     company.save();
     return HttpResponse(company)
 
+@csrf_exempt
 def company_search(request):
     filterSearch = json.loads(request.body)
     print(filterSearch)
